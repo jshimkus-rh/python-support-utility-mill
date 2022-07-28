@@ -1,0 +1,35 @@
+---
+# This is a badly formatted defaults file.
+#
+# A defaults file is generally organized as a dictionary of dictionaries of
+# arbitrary depth with only the highest-level key 'defaults' as a requirement.
+# A defaults file may include a list, which can be accessed by the below
+# specified path mechanism, but to access the list contents requires manual
+# processing of the list.
+some-defaults:
+  global1: some-global-value
+  global2: another-global-value
+
+  # Group1 defaults:
+  group1:
+    default: group1-default
+    subgroup1:
+      default: subgroup1-default
+      value1: value11
+      value2: value12
+    subgroup2:
+      default: subgroup2-default
+      value1: value21
+      value2: value22
+
+  # Group2 defaults:
+  group2:
+    default: group2-default
+    subgroup1:
+      default: subgroup1-default
+      value1: value11
+      value2: value12
+    subgroup2:
+      default: subgroup2-default
+      value1: value21
+      value2: value22
