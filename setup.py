@@ -41,7 +41,7 @@ setup = functools.partial(
           install_requires = [prefixed("pyyaml")],
           zip_safe = False,
           classifiers = ["License :: OSI Approved :: BSD License"],
-          license = readFile(os.path.join(package_prefix, "LICENSE.txt"))
+          license = readFile("LICENSE")
         )
 
 package_data = {}
