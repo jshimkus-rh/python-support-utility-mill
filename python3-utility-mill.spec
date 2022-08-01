@@ -10,8 +10,8 @@ Summary: %{name}
 Name: %{name}
 Version: %{version}
 Release: %{release}
-URL: https://gitlab.cee.redhat.com/vdo/open-sourcing/python/support/%{repo_name}
-Source0: %{url}/-/archive/%{repo_branch}/%{repo_name}-%{repo_branch}.tar.gz
+URL:     https://github.com/dm-vdo/python-support-utility-mill
+Source0: %{url}/archive/refs/heads/main.tar.gz
 License: BSD
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -36,7 +36,7 @@ Requires: python3-pyyaml
 UNKNOWN
 
 %prep
-%setup -n %{repo_name}-%{repo_branch}
+%setup -n python-support-utility-mill-%{repo_branch}
 
 %build
 python3 setup.py build
