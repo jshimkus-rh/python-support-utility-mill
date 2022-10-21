@@ -30,15 +30,28 @@ def versioned(src):
     python_version = ""
   return "{0}{1}".format(src, python_version)
 
+# Establish the installation requirements based on being invoked as part of
+# building an RPM.
+#
+# If building an RPM specifying installation requirements here results in
+# dependencies that are not met.  Working around this requires that the RPM
+# .spec file specifies dependencies itself.
+install_requires = [prefixed("pyyaml")]
+try:
+  os.environ["RPM_PACKAGE_NAME"]
+  install_requires = []
+except KeyError:
+  pass
+
 setup = functools.partial(
           setuptools.setup,
           name = python_prefixed(package_name),
-          version = "1.0.5",
+          version = "1.0.6",
           description = python_prefixed(package_name),
           author = "Joe Shimkus",
           author_email = "jshimkus@redhat.com",
           packages = setuptools.find_packages(exclude = []),
-          install_requires = [prefixed("pyyaml")],
+          install_requires = install_requires,
           zip_safe = False,
           classifiers = ["License :: OSI Approved :: BSD License"],
           license = readFile("LICENSE")
