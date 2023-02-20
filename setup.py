@@ -7,6 +7,8 @@ import setuptools
 import sys
 import yaml
 
+# package_version and the rpm .spec version are to be kept in sync.
+package_version = {"major": 1, "minor": 0, "patch": 6, "release": 2}
 package_name = "utility-mill"
 package_prefix = "mill"
 subpackage_names = ["defaults", "factory", "command"]
@@ -46,7 +48,10 @@ except KeyError:
 setup = functools.partial(
           setuptools.setup,
           name = python_prefixed(package_name),
-          version = "1.0.6",
+          version = "{0}.{1}.{2}.{3}".format(package_version["major"],
+                                             package_version["minor"],
+                                             package_version["patch"],
+                                             package_version["release"]),
           description = python_prefixed(package_name),
           author = "Joe Shimkus",
           author_email = "jshimkus@redhat.com",

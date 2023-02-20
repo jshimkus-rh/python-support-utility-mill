@@ -291,6 +291,10 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
     if sourceDictionary is not None:
       return cls._defaults()[0]["system"].content(path, sourceDictionary)
 
+    # Establish a path string which may be needed more than once for logging
+    # and exceptions.
+    pathString = "<no path>" if path is None else "/".join(path)
+
     # Iterate over the defaults checking the user, if any, and the system
     # defaults (in that order) for each entry (in order) until we find the
     # value requested or exhaust the defaults.
@@ -300,6 +304,8 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
           raise DefaultsFileDoesNotExistException
 
         try:
+          log.debug("querying defaults {0} for path: '{1}'"
+                    .format(defaults["user"].path, pathString))
           return defaults["user"].content(path)
         except  DefaultsFileContentMissingException:
           # No user override.  No need to log anything, but re-raise it to
@@ -308,14 +314,11 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
         except DefaultsException as ex:
           # Log any other defaults exception as it is unexpected.
           log.debug("exception accessing path '{0}' in defaults {1}: {2}"
-                      .format("<no path>" if path is None else "/".join(path),
-                              defaults["user"].path,
-                              ex))
+                      .format(pathString, defaults["user"].path, ex))
           raise
       except DefaultsException:
         log.debug("querying defaults {0} for path: '{1}'"
-                  .format(defaults["system"].path,
-                          "<no path>" if path is None else "/".join(path)))
+                  .format(defaults["system"].path, pathString))
         try:
           return defaults["system"].content(path)
         except  DefaultsFileContentMissingException:
@@ -323,12 +326,9 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
           pass
         except DefaultsException as ex:
           log.debug("exception accessing path '{0}' in defaults {1}: {2}"
-                      .format("<no path>" if path is None else "/".join(path),
-                              defaults["system"].path,
-                              ex))
+                      .format(pathString, defaults["system"].path, ex))
     # We've exhausted all the defaults and didn't find the requested value.
-    raise DefaultsFileContentMissingException("<no path>" if path is None
-                                                          else "/".join(path))
+    raise DefaultsFileContentMissingException(pathString)
 
   ####################################################################
   # Overridden methods
