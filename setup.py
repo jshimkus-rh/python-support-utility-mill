@@ -8,7 +8,7 @@ import sys
 import yaml
 
 # package_version and the rpm .spec version are to be kept in sync.
-package_version = {"major": 1, "minor": 0, "patch": 6, "release": 2}
+package_version = {"major": 1, "minor": 0, "patch": 7, "release": 1}
 package_name = "utility-mill"
 package_prefix = "mill"
 subpackage_names = ["defaults", "factory", "command"]

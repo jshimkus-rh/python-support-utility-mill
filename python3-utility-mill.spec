@@ -3,9 +3,9 @@
 %define repo_name python-support-utility-mill
 %define repo_branch main
 
-%define version 1.0.6
-%define unmangled_version 1.0.6
-%define release 2
+%define version 1.0.7
+%define unmangled_version 1.0.7
+%define release 1
 
 Name: python3-%{modname}
 Version: %{version}
@@ -66,6 +66,12 @@ UNKNOWN
 %{python3_sitelib}/python3_utility_mill-%{version}*
 
 %changelog
+* Thu Apr 20 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.7-1
+- When retrieving a defaults intermediate dictionary from the user defaults
+  get the same from the system defaults and return a copy of that updated
+  from the user defaults.  This provides the totality, at the requested level,
+  of defaults in the dictionary.
+
 * Mon Feb 20 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.6-2
 - Log defaults lookup attempt from user defaults file.
   This avoids confusion as to whether the user defaults are queried.
