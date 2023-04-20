@@ -3,6 +3,7 @@
 #
 # Copyright Red Hat
 #
+import copy
 import errno
 import inspect
 import importlib.resources
@@ -306,7 +307,23 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
         try:
           log.debug("querying defaults {0} for path: '{1}'"
                     .format(defaults["user"].path, pathString))
-          return defaults["user"].content(path)
+          userContent = defaults["user"].content(path)
+          # User defaults may include only those entries that override system
+          # defaults.  If the content is a dictionary (implying the user is
+          # caching it) get the system defaults of the same path and return a
+          # copy of that updated from the user defaults so the entirety of the
+          # defaults are available in the cached copy.
+          if isinstance(userContent, dict):
+            try:
+              systemContent = defaults["system"].content(path)
+            except DefaultsException:
+              log.exception(
+                "exception accessing system defaults {0} for path: '{1}'"
+                  .format(defaults["system"].path, pathString))
+              raise RuntimeError(
+                      "exception accessing user matching system defaults")
+            userContent = cls._overridenCopy(systemContent, userContent)
+          return userContent
         except  DefaultsFileContentMissingException:
           # No user override.  No need to log anything, but re-raise it to
           # look up the value in the system defaults.
@@ -371,6 +388,37 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
   @classmethod
   def _defaults(cls):
     return cls.__defaults
+
+  ####################################################################
+  @classmethod
+  def _overridenCopy(cls, base, update):
+    """Returns a deep copy of the base dictionary recursively updated from the
+    update dictionary.  Updates occur only on terminal values; i.e., no
+    wholesale replacement of intermediate dictionaries.  Also, only
+    pre-existing content in the base dictionary is updated; any "new" content
+    in the update dictionary raises an exception.
+    """
+    def _do_override(base, update):
+      for key in update:
+        if key not in base:
+          raise RuntimeError(
+                  "adding content not supported; key: {0}".format(key))
+
+        if ((base[key] is None) and (not isinstance(update[key], dict))):
+          base[key] = update[key]
+          continue
+
+        if not isinstance(base[key], type(update[key])):
+          raise TypeError("content type mismatch; key: {0}".format(key))
+
+        if not isinstance(base[key], dict):
+          base[key] = update[key]
+          continue
+
+        _do_override(base[key], update[key])
+      return base
+
+    return _do_override(copy.deepcopy(base), update)
 
 ######################################################################
 ######################################################################
