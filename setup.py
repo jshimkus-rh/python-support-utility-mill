@@ -8,10 +8,10 @@ import sys
 import yaml
 
 # package_version and the rpm .spec version are to be kept in sync.
-package_version = {"major": 1, "minor": 0, "patch": 7, "release": 1}
+package_version = {"major": 1, "minor": 0, "patch": 7, "release": 2}
 package_name = "utility-mill"
 package_prefix = "mill"
-subpackage_names = ["defaults", "factory", "command"]
+subpackage_names = ["data", "defaults", "factory", "command"]
 config_file_name = "config.yml"
 
 def readFile(path):

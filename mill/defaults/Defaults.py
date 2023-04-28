@@ -4,12 +4,12 @@
 # Copyright Red Hat
 #
 import copy
-import errno
 import inspect
 import importlib.resources
 import logging
 import os
-import yaml
+
+from mill import data
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class DefaultsException(Exception):
   ####################################################################
   def __init__(self, msg, *args, **kwargs):
     super(DefaultsException, self).__init__(*args, **kwargs)
-    self._msg = msg
+    self._msg = str(msg)
 
   ######################################################################
   def __str__(self):
@@ -73,104 +73,60 @@ class DefaultsFileFormatException(DefaultsFileException):
 
 ######################################################################
 ######################################################################
-class Defaults(object):
+class Defaults(data.DataFile):
   ####################################################################
   # Public methods
   ####################################################################
-  @property
-  def path(self):
-    return self.__filePath
 
+  ####################################################################
+  # Overridden public methods
   ####################################################################
   def content(self, path = None, sourceDictionary = None):
-    """Returns the specified content from the defaults file or the specified
-    dictionary.
-
-    The path argument is a list specifying the key path to the value of
-    interest.  In the case of the defaults file (i.e., no specified dictionary)
-    this excludes the highest level key of 'defaults'.
-
-    The source dictionary argument is provided for specifying a dictionary
-    extracted from the defaults (one of local processing interest) while
-    operating on said dictionary with the same overall defaults content checks.
-    Note that the path is local to the specified dictionary thus any exception
-    generated which includes the path will also be local to the specified
-    dictionary.
-
-    Both the defaults file and any specified source dictionary are treated as a
-    dictionary of dictionaries of arbitrary depth.
-    """
-    if path is None:
-      path = []
-    return self._content(sourceDictionary if sourceDictionary is not None
-                                          else self._defaults,
-                         path)
+    try:
+      return super(Defaults, self).content(path, sourceDictionary)
+    except Exception as ex:
+      raise self._translateException(ex)
 
   ####################################################################
-  # Overridden methods
-  ####################################################################
-  def __init__(self, filePath):
-    super(Defaults, self).__init__()
-    self.__filePath = filePath
-    self.__defaults = self._loadDefaults()
-
-  ####################################################################
-  # Protected methods
-  ####################################################################
-  def _content(self, sourceDictionary, path):
-    """Returns the specified content from the source dictionary.
-    The source dictionary is a dictionary of dictionaries of arbitrary depth.
-    The path argument is a list specifying the keyword path to the value
-    of interest.
-    """
-    result = sourceDictionary
-    missing = None
-    for element in path:
-      missing = element if missing is None else "/".join([missing, element])
-      try:
-        result = result[element]
-      except KeyError:
-        raise DefaultsFileContentMissingException(missing)
-    return result
-
-  ####################################################################
-  @property
-  def _defaults(self):
-    return self.__defaults
-
+  # Overridden protected methods
   ####################################################################
   @property
   def _toplevelLabel(self):
     return "defaults"
 
   ####################################################################
-  def _loadDefaults(self):
-    defaults = None
+  def _loadData(self):
     try:
-      with open(self.path) as f:
-        defaults = yaml.safe_load(f)
-        if not isinstance(defaults, dict):
-          raise DefaultsFileFormatException()
-        try:
-          defaults = self._content(defaults, [self._toplevelLabel])
-        except DefaultsFileContentMissingException:
-          raise DefaultsFileFormatException()
-    except IOError as ex:
-      if ex.errno != errno.ENOENT:
-        raise
-      raise DefaultsFileDoesNotExistException()
-
-    # Conceivably there could have been nothing but the top-level label
-    # in the defaults file.  If that was the case we would have a value
-    # for the defaults of None.  If so, set it to an empty dictionary.
-    if defaults is None:
-      defaults = {}
-
-    return defaults
+      return super(Defaults, self)._loadData()
+    except Exception as ex:
+      raise self._translateException(ex)
 
   ####################################################################
-  # Private methods
+  # Protected methods
   ####################################################################
+  def _translateException(self, exception):
+    if isinstance(exception, data.DataException):
+      translate = {
+        data.DataException.__name__ :
+          DefaultsException,
+        data.DataFileContentMissingException.__name__ :
+          DefaultsFileContentMissingException,
+        data.DataFileDoesNotExistException.__name__ :
+          DefaultsFileDoesNotExistException,
+        data.DataFileException.__name__ :
+          DefaultsFileException,
+        data.DataFileFormatException.__name__ :
+          DefaultsFileFormatException
+      }
+
+      try:
+        exception = translate[type(exception).__name__](exception)
+      except KeyError:
+        raise DefaultsException(
+                "could not translate exception: {0}".format(exception)
+              )
+
+    return exception
 
 ######################################################################
 ######################################################################

@@ -1,0 +1,35 @@
+---
+# This is a badly formatted data file.
+#
+# A data file is generally organized as a dictionary of dictionaries of
+# arbitrary depth with only the highest-level key 'data' as a requirement.
+# A data file may include a list, which can be accessed by the below
+# specified path mechanism, but to access the list contents requires manual
+# processing of the list.
+- data:
+  global1: some-global-value
+  global2: another-global-value
+
+  # Group1 data:
+  group1:
+    default: group1-data
+    subgroup1:
+      default: subgroup1-data
+      value1: value11
+      value2: value12
+    subgroup2:
+      default: subgroup2-data
+      value1: value21
+      value2: value22
+
+  # Group2 data:
+  group2:
+    default: group2-data
+    subgroup1:
+      default: subgroup1-data
+      value1: value11
+      value2: value12
+    subgroup2:
+      default: subgroup2-data
+      value1: value21
+      value2: value22

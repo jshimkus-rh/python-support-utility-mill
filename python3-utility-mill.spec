@@ -5,7 +5,7 @@
 
 %define version 1.0.7
 %define unmangled_version 1.0.7
-%define release 1
+%define release 2
 
 Name: python3-%{modname}
 Version: %{version}
@@ -66,6 +66,10 @@ UNKNOWN
 %{python3_sitelib}/python3_utility_mill-%{version}*
 
 %changelog
+* Fri Apr 28 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.7-2
+- Extract defaults file format and access as standalone data file;
+  defaults becomes a subclass.
+
 * Thu Apr 20 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.7-1
 - When retrieving a defaults intermediate dictionary from the user defaults
   get the same from the system defaults and return a copy of that updated
