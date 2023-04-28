@@ -3,4 +3,4 @@
 #
 # Copyright Red Hat
 #
-from . import command, defaults, factory
+from . import command, data, defaults, factory

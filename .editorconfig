@@ -121,10 +121,11 @@ root = true
 # editor if tab_width is not specified.
 #
 ########################################################################
+# Use 'tab' for everything, control the width using 'tab_width' and
+# spaces vs. tab using 'indent_style'.
+########################################################################
 [*]
 indent_size = tab
-[*.{pl,pm,py,sh}]
-indent_size = 2
 
 ########################################################################
 # Indentation Style
@@ -139,7 +140,7 @@ indent_size = 2
 ########################################################################
 [*]
 indent_style = tab
-[*.{pl,pm,py,sh}]
+[*.{md,pl,pm,py,yaml,yml}]
 indent_style = space
 
 ########################################################################
@@ -181,6 +182,8 @@ insert_final_newline = true
 ########################################################################
 [*]
 tab_width = 8
+[*.{pl,pm,py,yaml,yml}]
+tab_width = 2
 
 ########################################################################
 # Denotes whether whitespace is allowed at the end of lines
