@@ -1,0 +1,13 @@
+---
+# The contents of a Config file are formatted in the same way as that of a
+# Defaults file with the change that the top-level key must be 'config'.
+
+# This meta config file's parameters are utilized only at package (setuptools)
+# creation.
+config:
+  # List of classifiers for multi-package.
+  classifiers:
+    - "License :: OSI Approved :: BSD License"
+
+  # License file for multi-package.
+  license-file: "LICENSE"

@@ -5,7 +5,7 @@
 
 %define version 1.0.7
 %define unmangled_version 1.0.7
-%define release 2
+%define release 3
 
 Name: python3-%{modname}
 Version: %{version}
@@ -66,6 +66,9 @@ UNKNOWN
 %{python3_sitelib}/python3_utility_mill-%{version}*
 
 %changelog
+* Wed Jul 19 2023 Joe Shimkus <jshimkus@redhat.com> - 11.0.7-3
+- Changed build setup per template.
+
 * Fri Apr 28 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.7-2
 - Extract defaults file format and access as standalone data file;
   defaults becomes a subclass.
