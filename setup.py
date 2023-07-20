@@ -8,30 +8,41 @@ import sys
 import yaml
 
 # package_version and the rpm .spec version are to be kept in sync.
-package_version = {"major": 1, "minor": 0, "patch": 7, "release": 2}
+package_version = {"major": 1, "minor": 0, "patch": 7, "release": 3}
 package_name = "utility-mill"
-package_prefix = "mill"
-subpackage_names = ["data", "defaults", "factory", "command"]
+# Subdirectory containg packages.
+package_subdir = "mill"
+
+subpackages = [{"name": "data", "entry": None},
+               {"name": "defaults", "entry": None},
+               {"name": "factory", "entry": None},
+               {"name": "command", "entry": None}]
+
 config_file_name = "config.yml"
 
+###############################################################################
 def readFile(path):
   with open(path) as f:
     return f.read()
 
+###############################################################################
 def prefixed(src):
   if ("bdist_wheel" not in sys.argv) or ("--universal" not in sys.argv):
     src = python_prefixed(src)
   return src
 
+###############################################################################
 def python_prefixed(src):
   return "{0}-{1}".format(versioned("python"), src)
 
+###############################################################################
 def versioned(src):
   python_version = platform.python_version_tuple()[0]
   if ("bdist_wheel" in sys.argv) and ("--universal" in sys.argv):
     python_version = ""
   return "{0}{1}".format(src, python_version)
 
+###############################################################################
 # Establish the installation requirements based on being invoked as part of
 # building an RPM.
 #
@@ -45,6 +56,17 @@ try:
 except KeyError:
   pass
 
+# Meta configuration.
+with open(os.path.join("meta-config.yml")) as f:
+  meta_config = yaml.safe_load(f)["config"]
+
+console_scripts = ["{0} = {1}.{2}:{3}".format(versioned(subpackage["entry"]),
+                                              package_subdir,
+                                              subpackage["name"],
+                                              subpackage["entry"])
+                    for subpackage in subpackages
+                      if subpackage["entry"] is not None]
+
 setup = functools.partial(
           setuptools.setup,
           name = python_prefixed(package_name),
@@ -56,17 +78,25 @@ setup = functools.partial(
           author = "Joe Shimkus",
           author_email = "jshimkus@redhat.com",
           packages = setuptools.find_packages(exclude = []),
+          entry_points = {
+            "console_scripts" : console_scripts
+          },
           install_requires = install_requires,
           zip_safe = False,
-          classifiers = ["License :: OSI Approved :: BSD License"],
-          license = readFile("LICENSE")
+          classifiers = ([] if meta_config["classifiers"] is None
+                            else meta_config["classifiers"]),
+          license = (None if meta_config["license-file"] is None
+                          else readFile(meta_config["license-file"]))
         )
 
+# Individual package data.
 package_data = {}
 data_files = []
 
-for subpackage in subpackage_names:
-  with open(os.path.join(package_prefix, subpackage, config_file_name)) as f:
+for subpackage in subpackages:
+  with open(os.path.join(package_subdir,
+                         subpackage["name"],
+                         config_file_name)) as f:
     defaults = yaml.safe_load(f)["config"]["defaults"]
     defaultsFileName = defaults["name"]
     defaultsInstallDir = defaults["install-dir"]
@@ -81,10 +111,11 @@ for subpackage in subpackage_names:
         package_data_files.append(defaultsFileName)
       else:
         data_files.append((defaultsInstallDir,
-                            [os.path.join(package_prefix, subpackage,
+                            [os.path.join(package_subdir, subpackage["name"],
                                           defaultsFileName)]))
 
-    package_data[".".join([package_prefix, subpackage])] = package_data_files
+    package_data[".".join([package_subdir,
+                           subpackage["name"]])] = package_data_files
 
 # Execute setup.
 setup(package_data = package_data, data_files = data_files)
