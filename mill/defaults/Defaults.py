@@ -77,13 +77,27 @@ class Defaults(data.DataFile):
   ####################################################################
   # Public methods
   ####################################################################
+  def environmentVariables(self):
+    return {self._pathAsEnvironmentVariable(path)
+            for path in self._paths(self.content())}
 
   ####################################################################
   # Overridden public methods
   ####################################################################
   def content(self, path = None, sourceDictionary = None):
     try:
-      return super(Defaults, self).content(path, sourceDictionary)
+      content = super(Defaults, self).content(path, sourceDictionary)
+      # If the request...
+      #   1. has a path (i.e., not getting the top-level dictionary)
+      #   2. started from the "root" (i.e., no source dictionary)
+      #   3. the content is not a dictionary (i.e., an atual default)
+      # ...check for an environmental override.
+      if ((path is not None)
+          and (sourceDictionary is None)
+          and (not isinstance(content, dict))):
+        content = os.environ.get(self._pathAsEnvironmentVariable(path),
+                                 content)
+      return content
     except Exception as ex:
       raise self._translateException(ex)
 
@@ -103,6 +117,23 @@ class Defaults(data.DataFile):
 
   ####################################################################
   # Protected methods
+  ####################################################################
+  def _pathAsEnvironmentVariable(self, path):
+    return "_".join([x.upper() for x in path])
+
+  ####################################################################
+  def _paths(self, dictionary):
+    paths = []
+
+    for key in dictionary:
+      if isinstance(dictionary[key], dict):
+        paths.extend(
+          [[key] + x for x in self._paths(dictionary[key])])
+      else:
+        paths.append([key])
+
+    return paths
+
   ####################################################################
   def _translateException(self, exception):
     if isinstance(exception, data.DataException):
@@ -302,6 +333,16 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
                       .format(pathString, defaults["system"].path, ex))
     # We've exhausted all the defaults and didn't find the requested value.
     raise DefaultsFileContentMissingException(pathString)
+
+  ####################################################################
+  @classmethod
+  def environmentVariables(cls):
+    variableNames = set()
+    for defaults in cls._defaults():
+      # Query the system defaults as they always exist and are complete (user
+      # defaults only have to contain overrides).
+      variableNames |= defaults["system"].environmentVariables()
+    return variableNames
 
   ####################################################################
   # Overridden methods
