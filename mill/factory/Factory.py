@@ -6,6 +6,7 @@
 import argparse
 import logging
 import os
+import textwrap
 
 from mill import defaults
 from .FactoryArgumentParser import (FactoryArgumentParser,
@@ -126,6 +127,20 @@ class Factory(_AttributeMixin, defaults.DefaultsFileInfo):
     return None
 
   ####################################################################
+  @classmethod
+  def parserEpilog(cls):
+    # Check for environmental overrides and, if they exist, generate
+    # an epilog listing them.  If they don't return an empty string.
+    epilog = ", ".join([x for x in cls.environmentVariables()])
+    if len(epilog) > 0:
+      epilog = os.linesep.join(
+        ["Environment Variable Overrides",
+         textwrap.fill(textwrap.dedent(epilog),
+                       initial_indent = "    ",
+                       subsequent_indent = "    ")])
+    return epilog
+
+  ####################################################################
   # Public instance-behavior methods
   ####################################################################
   @classmethod
@@ -164,7 +179,8 @@ class Factory(_AttributeMixin, defaults.DefaultsFileInfo):
   ####################################################################
   @classmethod
   def parserParents(cls):
-    parser = argparse.ArgumentParser(add_help = False)
+    parser = argparse.ArgumentParser(add_help = False,
+                                     epilog = cls.parserEpilog())
     parser.add_argument("--debug",
                         help = "turn on debugging mode",
                         dest = "factoryDebug",
