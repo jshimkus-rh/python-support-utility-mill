@@ -3,9 +3,9 @@
 %define repo_name python-support-utility-mill
 %define repo_branch main
 
-%define version 1.0.7
-%define unmangled_version 1.0.7
-%define release 3
+%define version 1.1.0
+%define unmangled_version 1.1.0
+%define release 1
 
 Name: python3-%{modname}
 Version: %{version}
