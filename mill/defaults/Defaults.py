@@ -117,7 +117,7 @@ class DefaultsIntermediate(object):
         _update(base[key], update[key])
       return base
 
-    self.__dictionary = _update(copy.deepcopy(base.dictionary),
+    self.__dictionary = _update(copy.deepcopy(self.dictionary),
                                 update.dictionary)
 
   ####################################################################
