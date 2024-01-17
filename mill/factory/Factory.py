@@ -136,7 +136,7 @@ class Factory(_AttributeMixin, defaults.DefaultsFileInfo):
     # an epilog listing them.  If they don't return an empty string.
     envVars = ", ".join([x for x in sorted(cls.environmentVariables())])
     if len(envVars) > 0:
-      epilog = epilog + ["Environment Variable Overrides",
+      epilog = epilog + ["Defaults Environment Variable Overrides",
                          textwrap.fill(textwrap.dedent(envVars),
                                        initial_indent = "    ",
                                        subsequent_indent = "    ")]
