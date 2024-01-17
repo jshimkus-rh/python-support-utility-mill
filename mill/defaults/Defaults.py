@@ -73,30 +73,94 @@ class DefaultsFileFormatException(DefaultsFileException):
 
 ######################################################################
 ######################################################################
+class DefaultsIntermediate(object):
+  """A representation of a non-leaf value returned from Defaults.
+  Necessary to preserve environmental overrides functioning only
+  from the Defaults root.
+  """
+  ####################################################################
+  # Public methods
+  ####################################################################
+  @property
+  def dictionary(self):
+    return self.__dictionary
+
+  ####################################################################
+  @property
+  def envVarPrefix(self):
+    return self.__envVarPrefix
+
+  ####################################################################
+  def update(self, update):
+    """Updates the instance's dictionary with a deep copy recursively updated
+    from the update intermediate.  Updates occur only on terminal values; i.e.,
+    no wholesale replacement of the intermediate contents.  Only pre-existing
+    content in the instance is updated; any "new" content in the update raises
+    an exception. """
+    def _update(base, update):
+      for key in update:
+        if key not in base:
+          raise RuntimeError(
+                  "adding content not supported; key: {0}".format(key))
+
+        if ((base[key] is None) and (not isinstance(update[key], dict))):
+          base[key] = update[key]
+          continue
+
+        if not isinstance(base[key], type(update[key])):
+          raise TypeError("content type mismatch; key: {0}".format(key))
+
+        if not isinstance(base[key], dict):
+          base[key] = update[key]
+          continue
+
+        _update(base[key], update[key])
+      return base
+
+    self.__dictionary = _update(copy.deepcopy(base.dictionary),
+                                update.dictionary)
+
+  ####################################################################
+  # Overridden methods
+  ####################################################################
+  def __init__(self, envVarPrefix, dictionary):
+    super().__init__()
+    self.__envVarPrefix = envVarPrefix
+    self.__dictionary = dictionary
+
+######################################################################
+######################################################################
 class Defaults(data.DataFile):
   ####################################################################
   # Public methods
   ####################################################################
   def environmentVariables(self):
     return {self._pathAsEnvironmentVariable(path)
-            for path in self._paths(self.content())}
+            for path in self._paths(self.content().dictionary)}
 
   ####################################################################
   # Overridden public methods
   ####################################################################
-  def content(self, path = None, sourceDictionary = None):
+  def content(self, path = None, intermediate = None):
     try:
-      content = super(Defaults, self).content(path, sourceDictionary)
-      # If the request...
-      #   1. has a path (i.e., not getting the top-level dictionary)
-      #   2. started from the "root" (i.e., no source dictionary)
-      #   3. the content is not a dictionary (i.e., an atual default)
-      # ...check for an environmental override.
-      if ((path is not None)
-          and (sourceDictionary is None)
-          and (not isinstance(content, dict))):
-        content = os.environ.get(self._pathAsEnvironmentVariable(path),
-                                 content)
+      dictionary = (
+        None if intermediate is None else intermediate.dictionary
+      )
+
+      content = super(Defaults, self).content(path, dictionary)
+
+      envVar = self._pathAsEnvironmentVariable(path)
+      if intermediate is not None:
+        envVar = intermediate.envVarPrefix + "_" + envVar
+        envVar = envVar.lstrip("_")
+
+      # If the content is a dictionary return an intermediate containing
+      # it.
+      if isinstance(content, dict):
+        content = DefaultsIntermediate(envVar, content)
+      else:
+        # Actual data.  Use an environmental override.
+        content = os.environ.get(envVar, content)
       return content
     except Exception as ex:
       raise self._translateException(ex)
@@ -119,7 +183,7 @@ class Defaults(data.DataFile):
   # Protected methods
   ####################################################################
   def _pathAsEnvironmentVariable(self, path):
-    return "_".join([x.upper() for x in path])
+    return "" if path is None else "_".join([x.upper() for x in path])
 
   ####################################################################
   def _paths(self, dictionary):
@@ -267,17 +331,17 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
   # Public methods
   ####################################################################
   @classmethod
-  def defaults(cls, path = None, sourceDictionary = None):
+  def defaults(cls, path = None, intermediate = None):
     # We allow that there is no backing defaults in which case the response
     # is None.
     if len(cls._defaults()) == 0:
       return None
 
-    # If using a specified dictionary we only need the processing mechanics
+    # If using a specified intermediate we only need the processing mechanics
     # not a particular defaults.
     # Any extant entry always has a system defaults; simply use the first one.
-    if sourceDictionary is not None:
-      return cls._defaults()[0]["system"].content(path, sourceDictionary)
+    if intermediate is not None:
+      return cls._defaults()[0]["system"].content(path, intermediate)
 
     # Establish a path string which may be needed more than once for logging
     # and exceptions.
@@ -296,11 +360,11 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
                     .format(defaults["user"].path, pathString))
           userContent = defaults["user"].content(path)
           # User defaults may include only those entries that override system
-          # defaults.  If the content is a dictionary (implying the user is
+          # defaults.  If the content is a intermediate (implying the user is
           # caching it) get the system defaults of the same path and return a
           # copy of that updated from the user defaults so the entirety of the
           # defaults are available in the cached copy.
-          if isinstance(userContent, dict):
+          if isinstance(userContent, DefaultsIntermediate):
             try:
               systemContent = defaults["system"].content(path)
             except DefaultsException:
@@ -309,7 +373,8 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
                   .format(defaults["system"].path, pathString))
               raise RuntimeError(
                       "exception accessing user matching system defaults")
-            userContent = cls._overridenCopy(systemContent, userContent)
+            systemContent.update(userContent)
+            userContent = systemContent
           return userContent
         except  DefaultsFileContentMissingException:
           # No user override.  No need to log anything, but re-raise it to
@@ -385,37 +450,6 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
   @classmethod
   def _defaults(cls):
     return cls.__defaults
-
-  ####################################################################
-  @classmethod
-  def _overridenCopy(cls, base, update):
-    """Returns a deep copy of the base dictionary recursively updated from the
-    update dictionary.  Updates occur only on terminal values; i.e., no
-    wholesale replacement of intermediate dictionaries.  Also, only
-    pre-existing content in the base dictionary is updated; any "new" content
-    in the update dictionary raises an exception.
-    """
-    def _do_override(base, update):
-      for key in update:
-        if key not in base:
-          raise RuntimeError(
-                  "adding content not supported; key: {0}".format(key))
-
-        if ((base[key] is None) and (not isinstance(update[key], dict))):
-          base[key] = update[key]
-          continue
-
-        if not isinstance(base[key], type(update[key])):
-          raise TypeError("content type mismatch; key: {0}".format(key))
-
-        if not isinstance(base[key], dict):
-          base[key] = update[key]
-          continue
-
-        _do_override(base[key], update[key])
-      return base
-
-    return _do_override(copy.deepcopy(base), update)
 
 ######################################################################
 ######################################################################

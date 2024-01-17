@@ -9,11 +9,50 @@ import os
 import tempfile
 import unittest
 
-from Defaults import Defaults
+from Defaults import Defaults, DefaultsIntermediate
 
 #############################################################################
 #############################################################################
 class Test_Defaults(unittest.TestCase):
+
+  ####################################################################
+  # Usage of intermediate values.
+  def test_defaults_intermediate(self):
+    file = tempfile.NamedTemporaryFile("w+")
+    file.write("""---
+      defaults:
+        global1: some-global-value
+        global2: another-global-value
+
+        # Group1 data:
+        group1:
+          default: group1-default
+      """
+    )
+    file.flush()
+
+    defaults = Defaults(file.name)
+
+    intermediate = defaults.content(["group1"])
+    self.assertIsInstance(intermediate,
+                          DefaultsIntermediate,
+                          "returned DefaultsIntermediate")
+
+    environmentVariable = defaults._pathAsEnvironmentVariable(["group1",
+                                                               "default"])
+    try:
+      del os.environ[environmentVariable]
+    except KeyError:
+      pass
+
+    self.assertEqual(defaults.content(["default"], intermediate),
+                     "group1-default",
+                     "retrieved default file content")
+
+    os.environ[environmentVariable] = "GROUP1-DEFAULT-OVERRIDE"
+    self.assertEqual(defaults.content(["default"], intermediate),
+                     "GROUP1-DEFAULT-OVERRIDE",
+                     "retrieved environmental override")
 
   ####################################################################
   # Correctly generated environment variables.
