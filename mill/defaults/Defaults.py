@@ -183,7 +183,8 @@ class Defaults(data.DataFile):
   # Protected methods
   ####################################################################
   def _pathAsEnvironmentVariable(self, path):
-    return "" if path is None else "_".join([x.upper() for x in path])
+    envVar = "" if path is None else "_".join([x.upper() for x in path])
+    return envVar.replace("-", "_")
 
   ####################################################################
   def _paths(self, dictionary):
