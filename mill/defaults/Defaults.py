@@ -92,6 +92,11 @@ class DefaultsIntermediate(object):
     return self.__envVarPrefix
 
   ####################################################################
+  @property
+  def keys(self):
+    return self.dictionary.keys()
+
+  ####################################################################
   def update(self, update):
     """Updates the instance's dictionary with a deep copy recursively updated
     from the update intermediate.  Updates occur only on terminal values; i.e.,
@@ -124,8 +129,13 @@ class DefaultsIntermediate(object):
   ####################################################################
   # Overridden methods
   ####################################################################
-  def __init__(self, envVarPrefix, dictionary):
+  def __getitem__(self, key):
+    return self.parent.content([key], self)
+
+  ####################################################################
+  def __init__(self, parent, envVarPrefix, dictionary):
     super().__init__()
+    self.__parent = parent
     self.__envVarPrefix = envVarPrefix
     self.__dictionary = dictionary
 
@@ -158,7 +168,7 @@ class Defaults(data.DataFile):
       # If the content is a dictionary return an intermediate containing
       # it.
       if isinstance(content, dict):
-        content = DefaultsIntermediate(envVar, content)
+        content = DefaultsIntermediate(self, envVar, content)
       else:
         # Actual data.  Use an environmental override.
         content = os.environ.get(envVar, content)
