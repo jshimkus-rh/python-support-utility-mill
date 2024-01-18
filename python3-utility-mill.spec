@@ -66,7 +66,7 @@ UNKNOWN
 %{python3_sitelib}/python3_utility_mill-%{version}*
 
 %changelog
-* Wed Jan 17 2024 Joe Shimkus <jshimkus@redhat.com> - 1.1.0-1
+* Wed Thu 18 2024 Joe Shimkus <jshimkus@redhat.com> - 1.1.0-1
 - Support environmental overrides for defaults.
 
 * Wed Jul 19 2023 Joe Shimkus <jshimkus@redhat.com> - 1.0.7-3

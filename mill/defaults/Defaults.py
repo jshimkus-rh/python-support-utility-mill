@@ -8,6 +8,7 @@ import inspect
 import importlib.resources
 import logging
 import os
+import string
 
 from mill import data
 
@@ -184,7 +185,9 @@ class Defaults(data.DataFile):
   ####################################################################
   def _pathAsEnvironmentVariable(self, path):
     envVar = "" if path is None else "_".join([x.upper() for x in path])
-    return envVar.replace("-", "_")
+    # Replace each punctuation character in the variable with underscore.
+    return envVar.translate(str.maketrans(string.punctuation,
+                                          "_" * len(string.punctuation)))
 
   ####################################################################
   def _paths(self, dictionary):
