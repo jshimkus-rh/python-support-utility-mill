@@ -38,8 +38,8 @@ class Test_Defaults(unittest.TestCase):
                           DefaultsIntermediate,
                           "returned DefaultsIntermediate")
 
-    environmentVariable = defaults._pathAsEnvironmentVariable(["group1",
-                                                               "default"])
+    environmentVariable = defaults.pathAsEnvironmentVariable(["group1",
+                                                              "default"])
     try:
       del os.environ[environmentVariable]
     except KeyError:
@@ -90,7 +90,7 @@ class Test_Defaults(unittest.TestCase):
     )
     file.flush()
 
-    valid = {
+    valid = [
       "GLOBAL1",
       "GLOBAL2",
       "GROUP1_DEFAULT",
@@ -107,12 +107,12 @@ class Test_Defaults(unittest.TestCase):
       "GROUP2_SUBGROUP2_DEFAULT",
       "GROUP2_SUBGROUP2_VALUE1",
       "GROUP2_SUBGROUP2_VALUE2"
-    }
+    ]
 
     defaults = Defaults(file.name)
 
-    self.assertEqual(defaults.environmentVariables(),
-                     valid,
+    self.assertEqual(sorted(defaults.envVars),
+                     sorted(valid),
                      "environment variables match leaf paths")
 
 
@@ -130,7 +130,7 @@ class Test_Defaults(unittest.TestCase):
     defaults = Defaults(file.name)
 
     path = ["global1"]
-    environmentVariable = defaults._pathAsEnvironmentVariable(path)
+    environmentVariable = defaults.pathAsEnvironmentVariable(path)
     try:
       del os.environ[environmentVariable]
     except KeyError:

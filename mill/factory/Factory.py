@@ -133,13 +133,15 @@ class Factory(_AttributeMixin, defaults.DefaultsFileInfo):
     epilog = []
 
     # Check for environmental overrides and, if they exist, generate
-    # an epilog listing them.  If they don't return an empty string.
-    envVars = ", ".join([x for x in sorted(cls.environmentVariables())])
-    if len(envVars) > 0:
-      epilog = epilog + ["Defaults Environment Variable Overrides",
-                         textwrap.fill(textwrap.dedent(envVars),
-                                       initial_indent = "    ",
-                                       subsequent_indent = "    ")]
+    # an epilog listing them and the resolved value of the default;
+    # i.e., the value returned when querying for a default taking into
+    # account all applicable overrides.
+    varsAndValues = [
+      f"    {k}: {v}" for (k, v) in cls.envVarsAndValues().items()
+    ]
+    if len(varsAndValues) > 0:
+      epilog = ["Environment Variables and Resolved Defaults"]
+      epilog.extend(sorted(varsAndValues))
 
     return os.linesep.join(epilog)
 

@@ -145,9 +145,25 @@ class Defaults(data.DataFile):
   ####################################################################
   # Public methods
   ####################################################################
-  def environmentVariables(self):
-    return {self._pathAsEnvironmentVariable(path)
-            for path in self._paths(self.content().dictionary)}
+  @property
+  def envVars(self):
+    return sorted(
+      [self.pathAsEnvironmentVariable(path) for path in self.paths]
+    )
+
+  ####################################################################
+  @property
+  def paths(self):
+    """Returns all the complete paths to actual values.
+    """
+    return self._paths(self.content().dictionary)
+
+  ####################################################################
+  def pathAsEnvironmentVariable(self, path):
+    envVar = "" if path is None else "_".join([x.upper() for x in path])
+    # Replace each punctuation character in the variable with underscore.
+    return envVar.translate(str.maketrans(string.punctuation,
+                                          "_" * len(string.punctuation)))
 
   ####################################################################
   # Overridden public methods
@@ -160,7 +176,7 @@ class Defaults(data.DataFile):
 
       content = super(Defaults, self).content(path, dictionary)
 
-      envVar = self._pathAsEnvironmentVariable(path)
+      envVar = self.pathAsEnvironmentVariable(path)
       if intermediate is not None:
         envVar = intermediate.envVarPrefix + "_" + envVar
         envVar = envVar.lstrip("_")
@@ -192,13 +208,6 @@ class Defaults(data.DataFile):
 
   ####################################################################
   # Protected methods
-  ####################################################################
-  def _pathAsEnvironmentVariable(self, path):
-    envVar = "" if path is None else "_".join([x.upper() for x in path])
-    # Replace each punctuation character in the variable with underscore.
-    return envVar.translate(str.maketrans(string.punctuation,
-                                          "_" * len(string.punctuation)))
-
   ####################################################################
   def _paths(self, dictionary):
     paths = []
@@ -415,13 +424,22 @@ class DefaultsFileInfo(DefaultsFileBaseMixin):
 
   ####################################################################
   @classmethod
-  def environmentVariables(cls):
-    variableNames = set()
+  def envVarsAndValues(cls):
+    """Returns a dictionary for which the keys are the environmental
+    override variables and whose values are the resolved default value.
+    A resolved default value is the actual value that would be returned
+    when querying for the default; it's only the environmental override
+    value if the override variable exists.
+    """
+    varsAndValues = {}
     for defaults in cls._defaults():
-      # Query the system defaults as they always exist and are complete (user
+      # Use the system defaults as they always exist and are complete (user
       # defaults only have to contain overrides).
-      variableNames |= defaults["system"].environmentVariables()
-    return variableNames
+      varsAndValues |= {
+        defaults["system"].pathAsEnvironmentVariable(path): cls.defaults(path)
+        for path in defaults["system"].paths
+      }
+    return varsAndValues
 
   ####################################################################
   # Overridden methods
